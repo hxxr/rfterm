@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#03a9f4</color>
+    <color name="colorPrimaryDark">#000000</color>
+    <color name="colorAccent">#2962ff</color>
+
+    <color name="deviceCaption">#1d7baa</color>
+    <color name="deviceDetail">#999999</color>
+
+    <color name="connectingBackground">#3a3b41</color>
+    <color name="connectingCaption">#ffffff</color>
+    <color name="connectingProgress">#bbbbbb</color>
+
+    <color name="tLight">#b7e1f4</color>
+    <color name="tDark">#03a9f4</color>
+</resources>

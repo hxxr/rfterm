@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/connecting"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/connectingBackground"
+    tools:context=".Connecting">
+
+    <include
+        android:id="@+id/device"
+        layout="@layout/serial_device" />
+
+    <TextView
+        android:id="@+id/caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:text="@string/connecting"
+        android:textColor="@color/connectingCaption"
+        android:textSize="32sp"
+        android:alpha="0" />
+
+</android.support.constraint.ConstraintLayout>

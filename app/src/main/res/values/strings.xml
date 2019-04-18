@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name" translatable="false">RFTERM</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_connecting">Connecting...</string>
+
+    <string name="connecting">Connecting</string>
+    <string name="success">Success</string>
+    <string name="failed_to_connect">Failed to Connect</string>
+    <string name="snackbar_failed">Error: Could not find a bluetooth serial port on the requested device.</string>
+
+    <string name="terminal_connected">Connected to:</string>
+    <string name="terminal_show">Tap screen to show keyboard</string>
+
+    <string name="mouseTracking_notTracking">Not currently tracking the mouse.</string>
+    <string name="mouseTracking_tracking">Something is tracking the mouse...</string>
+    <string name="mouseTracking_stopped">No longer tracking the mouse.</string>
+</resources>

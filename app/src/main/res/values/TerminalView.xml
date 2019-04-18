@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="xtermView">
+        <attr name="horizontalPadding" format="dimension" />
+        <attr name="verticalPadding" format="dimension" />
+    </declare-styleable>
+</resources>

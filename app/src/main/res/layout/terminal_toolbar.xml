@@ -1,0 +1,506 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/toolbar_wrapper"
+    android:layout_width="match_parent"
+    android:layout_height="32dp"
+    android:background="@color/tDark"
+    android:orientation="horizontal"
+    android:focusable="true"
+    android:focusableInTouchMode="true">
+
+    <ImageButton
+        android:id="@+id/t_ctrl"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="3dp"
+        android:layout_weight="1.75"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="Control"
+        android:scaleType="fitCenter"
+        android:tint="@color/tLight"
+        android:src="@drawable/t_ctrl_1" />
+
+    <ImageButton
+        android:id="@+id/t_func"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="3dp"
+        android:layout_weight="1.75"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="Function"
+        android:scaleType="fitCenter"
+        android:tint="@color/tLight"
+        android:src="@drawable/t_func_1" />
+
+    <ImageButton
+        android:id="@+id/t_tab"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="3dp"
+        android:layout_weight="1.3"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="Tab"
+        android:scaleType="fitCenter"
+        android:tint="@color/tLight"
+        android:src="@drawable/t_tab" />
+
+    <ImageButton
+        android:id="@+id/t_mod_more"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="3dp"
+        android:layout_weight="1.2"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="More"
+        android:scaleType="fitCenter"
+        android:tint="@color/tLight"
+        android:src="@drawable/t_key_more" />
+
+    <ImageButton
+        android:id="@+id/t_esc"
+        android:visibility="gone"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="3dp"
+        android:layout_weight="1.35"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="Escape"
+        android:scaleType="fitCenter"
+        android:tint="@color/tLight"
+        android:src="@drawable/t_esc" />
+
+    <Space
+        android:id="@+id/t_mod_space1"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:layout_weight=".4" />
+
+    <ImageButton
+        android:id="@+id/t_ins"
+        android:visibility="gone"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="3dp"
+        android:layout_weight="1.35"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="Insert"
+        android:scaleType="fitCenter"
+        android:tint="@color/tLight"
+        android:src="@drawable/t_ins" />
+
+    <Space
+        android:id="@+id/t_mod_space2"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:layout_weight=".4" />
+
+    <ImageButton
+        android:id="@+id/t_del"
+        android:visibility="gone"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="3dp"
+        android:layout_weight="1.3"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="Delete"
+        android:scaleType="fitCenter"
+        android:tint="@color/tLight"
+        android:src="@drawable/t_del" />
+
+    <ImageButton
+        android:id="@+id/t_mod_less"
+        android:visibility="gone"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="3dp"
+        android:layout_weight="1.2"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="More"
+        android:scaleType="fitCenter"
+        android:tint="@color/tLight"
+        android:src="@drawable/t_key_less" />
+
+    <ImageView
+        android:id="@+id/t_chevron1"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:adjustViewBounds="true"
+        android:background="@color/tLight"
+        android:tint="@color/tDark"
+        android:src="@drawable/t_chevron_right" />
+
+    <ImageButton
+        android:id="@+id/t_left"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="0dp"
+        android:layout_weight="1.2"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="Left"
+        android:scaleType="fitCenter"
+        android:background="@color/tLight"
+        android:tint="@color/tDark"
+        android:src="@drawable/t_left" />
+
+    <ImageButton
+        android:id="@+id/t_up"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="0dp"
+        android:layout_weight="1.2"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="Up"
+        android:scaleType="fitCenter"
+        android:background="@color/tLight"
+        android:tint="@color/tDark"
+        android:src="@drawable/t_up" />
+
+    <ImageButton
+        android:id="@+id/t_down"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="0dp"
+        android:layout_weight="1.2"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="Down"
+        android:scaleType="fitCenter"
+        android:background="@color/tLight"
+        android:tint="@color/tDark"
+        android:src="@drawable/t_down" />
+
+    <ImageButton
+        android:id="@+id/t_right"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="0dp"
+        android:layout_weight="1.2"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="Right"
+        android:scaleType="fitCenter"
+        android:background="@color/tLight"
+        android:tint="@color/tDark"
+        android:src="@drawable/t_right" />
+
+    <ImageView
+        android:id="@+id/t_keyspacer"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_weight=".7"
+        android:background="@color/tLight" />
+
+
+    <Button
+        android:id="@+id/t_key1"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:textSize="18sp"
+        android:padding="2dp"
+        android:layout_weight="1"
+        style="?android:attr/borderlessButtonStyle"
+        android:background="@color/tLight"
+        android:textColor="@color/tDark"
+        android:text="*" />
+
+    <Button
+        android:id="@+id/t_key2"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:textSize="18sp"
+        android:padding="2dp"
+        android:layout_weight="1"
+        style="?android:attr/borderlessButtonStyle"
+        android:background="@color/tLight"
+        android:textColor="@color/tDark"
+        android:text="#" />
+
+    <Button
+        android:id="@+id/t_key3"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:textSize="18sp"
+        android:padding="2dp"
+        android:layout_weight="1"
+        style="?android:attr/borderlessButtonStyle"
+        android:background="@color/tLight"
+        android:textColor="@color/tDark"
+        android:text="_" />
+
+    <Button
+        android:id="@+id/t_key4"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:textSize="18sp"
+        android:padding="2dp"
+        android:layout_weight="1"
+        style="?android:attr/borderlessButtonStyle"
+        android:background="@color/tLight"
+        android:textColor="@color/tDark"
+        android:text="-" />
+
+    <Button
+        android:id="@+id/t_key5"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:textSize="18sp"
+        android:padding="2dp"
+        android:layout_weight="1"
+        style="?android:attr/borderlessButtonStyle"
+        android:background="@color/tLight"
+        android:textColor="@color/tDark"
+        android:text="/" />
+
+    <ImageButton
+        android:id="@+id/t_key_more"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="3dp"
+        android:layout_weight="1.2"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="More"
+        android:scaleType="fitCenter"
+        android:background="@color/tLight"
+        android:tint="@color/tDark"
+        android:src="@drawable/t_key_more" />
+
+    <Button
+        android:id="@+id/t_key6"
+        android:visibility="gone"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:textSize="18sp"
+        android:padding="2dp"
+        android:layout_weight="1"
+        style="?android:attr/borderlessButtonStyle"
+        android:background="@color/tLight"
+        android:textColor="@color/tDark"
+        android:text="&amp;" />
+
+    <Button
+        android:id="@+id/t_key7"
+        android:visibility="gone"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:textSize="18sp"
+        android:padding="2dp"
+        android:layout_weight="1"
+        style="?android:attr/borderlessButtonStyle"
+        android:background="@color/tLight"
+        android:textColor="@color/tDark"
+        android:text="(" />
+
+    <Button
+        android:id="@+id/t_key8"
+        android:visibility="gone"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:textSize="18sp"
+        android:padding="2dp"
+        android:layout_weight="1"
+        style="?android:attr/borderlessButtonStyle"
+        android:background="@color/tLight"
+        android:textColor="@color/tDark"
+        android:text=")" />
+
+    <Button
+        android:id="@+id/t_key9"
+        android:visibility="gone"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:textSize="18sp"
+        android:padding="2dp"
+        android:layout_weight="1"
+        style="?android:attr/borderlessButtonStyle"
+        android:background="@color/tLight"
+        android:textColor="@color/tDark"
+        android:text="=" />
+
+    <Button
+        android:id="@+id/t_key10"
+        android:visibility="gone"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:textSize="18sp"
+        android:padding="2dp"
+        android:layout_weight="1"
+        style="?android:attr/borderlessButtonStyle"
+        android:background="@color/tLight"
+        android:textColor="@color/tDark"
+        android:text="%" />
+
+    <ImageButton
+        android:id="@+id/t_key_less"
+        android:visibility="gone"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="3dp"
+        android:layout_weight="1.2"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="More"
+        android:scaleType="fitCenter"
+        android:background="@color/tLight"
+        android:tint="@color/tDark"
+        android:src="@drawable/t_key_less" />
+
+    <ImageView
+        android:id="@+id/t_chevron2"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:adjustViewBounds="true"
+        android:tint="@color/tLight"
+        android:src="@drawable/t_chevron_right" />
+
+    <Space
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.2" />
+
+    <ImageButton
+        android:focusable="false"
+        android:clickable="false"
+        android:id="@+id/t_shift"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="0dp"
+        android:layout_weight="1.1"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="Shift"
+        android:scaleType="fitCenter"
+        android:tint="@color/tLight"
+        android:src="@drawable/t_shift_1" />
+
+    <Space
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="0.1" />
+
+    <ImageButton
+        android:focusable="false"
+        android:clickable="false"
+        android:id="@+id/t_meta"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="0dp"
+        android:layout_weight="1.1"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="Meta"
+        android:scaleType="fitCenter"
+        android:tint="@color/tLight"
+        android:src="@drawable/t_meta_1" />
+
+    <Space
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="0.2" />
+
+    <ImageButton
+        android:focusable="false"
+        android:clickable="false"
+        android:id="@+id/t_keyboard"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="0dp"
+        android:layout_weight="1.2"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="Toggle Keyboard"
+        android:scaleType="fitCenter"
+        android:tint="@color/tLight"
+        android:src="@drawable/t_keyboard" />
+
+    <Space
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="0.1" />
+
+    <ImageButton
+        android:id="@+id/t_exit"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="2dp"
+        android:layout_weight="1.2"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="Exit"
+        android:scaleType="fitCenter"
+        android:tint="@color/tLight"
+        android:src="@drawable/t_exit" />
+
+    <Space
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="0.1" />
+
+    <ImageButton
+        android:id="@+id/t_more"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:padding="0dp"
+        android:layout_weight=".7"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="More"
+        android:scaleType="fitCenter"
+        android:tint="@color/tLight"
+        android:src="@drawable/t_more" />
+
+</LinearLayout>
