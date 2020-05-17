@@ -20,6 +20,7 @@ import android.widget.OverScroller;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -1891,13 +1892,22 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
      * @param chars Set of characters to add.
      */
     public synchronized void write(char chars[], int length) {
-        for (int i = 0; i < length; i++) {
-            Log.d("ViewRoot_INTERCEPTED", String.valueOf((int)chars[i]) + "     " +
-                    String.valueOf(chars[i]));
-            render(chars[i]); // Render character
+        // Only render characters if the terminal has been initialised
+        if (ready) {
+            for (int i = 0; i < length; i++) {
+                Log.d("ViewRoot_INTERCEPTED", String.valueOf((int) chars[i]) + "     " +
+                        String.valueOf(chars[i]));
+                render(chars[i]); // Render character
+            }
+
+            postInvalidate(); // Triggers a re-rendering of the view
         }
 
-        postInvalidate(); // Triggers a re-rendering of the view
+        // If the terminal is not ready to render characters, store them until ready
+        else
+            for (int i = 0; i < length; i++) {
+                preBuffer.add(chars[i]);
+            }
     }
 
     /**
@@ -3458,6 +3468,11 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
 
             screenBufferT = new byte[rows * cols * 2]; // Initialize screenBufferT
             Arrays.fill(screenBufferT, (byte)0); // Fill screenBuffer with 0 (regular text)
+
+            // Print any characters to the screen that were sent before the
+            // terminal was fully initialised
+            ready = true;
+            write(charLToA(preBuffer), preBuffer.size());
         }
 
         // This runs if the view is resized by the user
@@ -4509,4 +4524,15 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
      * which are associated with the Alternate Screen Buffer.
      */
     private boolean res_titeInhibit = false;
+
+    /**
+     * Buffer where characters are stored if characters are sent to the terminal
+     * before it has fully initialised. This is to prevent crashes.
+     */
+    private List<Character> preBuffer = new ArrayList<>();
+
+    /**
+     * Whether or not the terminal view has been initialised properly.
+     */
+    private boolean ready = false;
 }
