@@ -22,7 +22,7 @@ There are already a large amount of Android apps designed to connect to devices 
 The app also supports mouse tracking. Some programs (like Midnight Commander) track the mouse, you can tap the screen to interact with these programs.
 
 ## Video Demonstration
-TODO
+[https://www.youtube.com/watch?v=ZA8AqfUjarE](https://www.youtube.com/watch?v=ZA8AqfUjarE)
 
 ## Setup
 To connect to a shell remotely through Bluetooth from your Android device using RFCOMM, you have to install software on both your Android device and the Linux device you want to connect to.
