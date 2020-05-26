@@ -1561,7 +1561,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                         // it means report device status. Specifically, if the parameter is 5,
                         // xtermView will print the escape code "ESC [ 0 n" which means "ok".
                         // If the parameter is 6,
-                        // xtermView will instead print the escape code "ESC r ; c R",
+                        // xtermView will instead print the escape code "ESC [ r ; c R",
                         // where r is current cursor row and c is current cursor column
                         // (one-based, 1 is first row, not 0).
                         // If the parameter is something other than
@@ -1571,7 +1571,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                 switch (parsePs(charLToA(e))) {
                                     // If parameter is 5, send "ESC [ 0 n"
                                     case 5:
-                                        shell.output(new char[]{27,91,0,110}); // "ESC [ 0 n"
+                                        shell.output(new char[]{27,'[','0','n'}); // "ESC [ 0 n"
                                         break;
 
                                     // If parameter is 6, send "ESC [ r ; c R"
@@ -1580,9 +1580,9 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                         List<Character> L = new ArrayList<>();
                                         L.add((char)27);                                      // ESC
                                         L.add('[');                                           // [
-                                        L.addAll(Arrays.asList(intToChars(curY+1)));  // r
+                                        L.addAll(Arrays.asList(intToChars(curY+1)));          // r
                                         L.add(';');                                           // ;
-                                        L.addAll(Arrays.asList(intToChars(curX+1)));  // c
+                                        L.addAll(Arrays.asList(intToChars(curX+1)));          // c
                                         L.add('R');                                           // R
                                         shell.output(charLToA(L));
                                         break;

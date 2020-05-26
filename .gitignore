@@ -8,3 +8,5 @@
 /build
 /captures
 .externalNativeBuild
+.project
+.settings/org.eclipse.buildship.core.prefs
