@@ -1728,8 +1728,11 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                     curX = 0; // Move cursor back to beginning of line
                     break;
 
-                // If we receive a line feed character
-                case 10:
+                // If we receive a line feed, form feed or vertical tab character
+                // (xterm treats VT and FF as LF)
+                case 10:  // LF (line feed)
+                case 11:  // VT (vertical tab)
+                case 12:  // FF (form feed)
                     // Insert implicit carriage return if automatic newline mode is enabled
                     if (autoNewline) curY = 0;
                     // Move cursor to next line (without changing cursor column)
@@ -1760,6 +1763,10 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                         }
                     });
                     break;
+
+                // If we receive an enquiry character, send back the answerbackString resource
+                case 5:
+                    shell.output(res_answerbackString.toCharArray());
             }
 
             // Render non-special characters normally
