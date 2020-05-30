@@ -954,7 +954,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                         // ESC [ ? 6 4 ; 2 2 c                 (VT420)
                         case 'c':
                             if (e.get(1)!='>' && parsePs(charLToA(e))<1)
-                                shell.output(new char[]{27,'[','?','6','4',';','2','2','c'});
+                                shell.output(new char[]{27,'[','?','1',';','0','c'});
                             break;
 
                         // -------------------------------------------------------------------------
