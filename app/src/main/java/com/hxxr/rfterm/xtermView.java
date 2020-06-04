@@ -427,7 +427,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                     isEscaping = false;
                     Log.d("ViewRoot_ESCAPECODE", String.valueOf(charLToA(e)));
 
-                    Paint background = reverseVideo ? fpaint : dpaint;
+                    Paint background = reverseVideo ? fpaint : bpaint;
 
                     // Determine the type of CSI code by looking at the last character
                     switch (e.get(e.size() - 1)) {
