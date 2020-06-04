@@ -40,9 +40,9 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
         // while it actually means "restore cursor"
 
         transcript1.add(c);
-        if ((int)c < 32 || (int)c == 127) transcript2.add(c);
+        if ((int)c >= 32 && (int)c != 127) transcript2.add(c);
         if (!isEscaping && (int)c != 27) transcript3.add(c);
-        if (!isEscaping && ((int)c < 32 || (int)c == 127)) transcript4.add(c);
+        if (!isEscaping && ((int)c >= 32 && (int)c != 127)) transcript4.add(c);
 
         // If the user has scrolled the window, scroll to the bottom
         if (scrollLines > 0) {
@@ -53,7 +53,12 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
         }
 
         if (isEscaping) { // If we are looking for an escape code
-            e.add(c); // Add character to escape code buffer
+            if (((int)c >= 32 && (int)c != 127) || (int)c == 7 || (int)c == 27)
+                e.add(c); // Add character to escape code buffer
+
+            // Remove any control characters unless the sequence begins with ESC ]
+            if ((e.size() > 1 && e.get(0) != ']' || e.size() == 1) && e.get(e.size()-1) < 32)
+                e.remove(e.size()-1);
 
             // Check the code against known list of codes which have length one
             if (e.size() == 1) {
@@ -76,8 +81,9 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                         // If cursor is still below screen, move it to the last row
                         if (curY >= rows) curY = rows - 1;
 
+                        toWrap = false;
                         shouldScroll = true;
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
@@ -99,13 +105,16 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                         if (curY >= rows) curY = rows - 1;
 
                         shouldScroll = true;
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
+                    // ESC H   -   Tab Set (HTS)
+                    // A new tab stop is placed in the same column as the cursor.
                     case 'H':
                         logEscape();
-                        break;
+                        tabStops.set(curX, true);
+                        return;
 
                     // -----------------------------------------------------------------------------
 
@@ -125,44 +134,45 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                         // If cursor is still above screen, move it to the first row
                         if (curY < 0) curY = 0;
 
+                        toWrap = false;
                         shouldScroll = true;
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
                     case 'N':
                         logEscape();
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
                     case 'O':
                         logEscape();
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
                     case 'P':
                         logEscape();
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
                     case 'V':
                         logEscape();
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
                     case 'W':
                         logEscape();
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
                     case 'X':
                         logEscape();
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
@@ -173,7 +183,16 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                         logEscape();
                         scurX = curX; // Save cursor X
                         scurY = curY; // Save cursor Y
-                        break;
+                        stypeface = typeface;
+                        sinverse = inverse;
+                        sfpaint = fpaint;
+                        sfpaintbold = fpaintbold;
+                        sbpaint = bpaint;
+                        sbpaintbold = bpaintbold;
+                        sg1_charset = g1_charset;
+                        sdecSpecGraph = decSpecGraph;
+                        sdecSpecGraph_alt = sdecSpecGraph_alt;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
@@ -183,7 +202,28 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                         logEscape();
                         curX = scurX<cols ? scurX : cols-1; // Restore cursor X
                         curY = scurY<rows ? scurY : rows-1; // Restore cursor Y
-                        break;
+                        if (curX >= maxCols) curX = maxCols-1;
+                        typeface = stypeface;
+                        inverse = sinverse;
+                        fpaint = sfpaint;
+                        fpaintbold = sfpaintbold;
+                        bpaint = sbpaint;
+                        bpaintbold = sbpaintbold;
+                        if (inverse) {
+                            int _fpaint = fpaint.getColor();
+                            fpaint.setColor(bpaint.getColor());
+                            fpaintbold.setColor(bpaintbold.getColor());
+                            bpaint.setColor(_fpaint);
+                            bpaintbold.setColor(_fpaint);
+                        }
+                        g1_charset = sg1_charset;
+                        boolean _decSpecGraph = decSpecGraph;
+                        decSpecGraph = sdecSpecGraph;
+                        decSpecGraph_alt = sdecSpecGraph_alt;
+                        if (decSpecGraph != _decSpecGraph)
+                            onDecSpecGraph.run();
+                        toWrap = false;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
@@ -200,7 +240,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             appKeypad = true;
                             onKeypadChange.run();
                         }
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
@@ -217,79 +257,103 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             appKeypad = false;
                             onKeypadChange.run();
                         }
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
                     case 'F':
                         logEscape();
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
                     case 'c':
                         logEscape();
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
                     case 'l':
                         logEscape();
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
                     case 'm':
                         logEscape();
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
                     case 'n':
                         logEscape();
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
                     case 'o':
                         logEscape();
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
                     case '|':
                         logEscape();
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
                     case '}':
                         logEscape();
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
 
                     case '~':
                         logEscape();
-                        break;
+                        return;
 
                     // -----------------------------------------------------------------------------
                 }
             }
 
             // Detect length-two escape codes that begin with space (SP)
-            if (e.size()==2 && e.get(0)==' ')
+            if (e.size()==2 && e.get(0)==' ') {
                 logEscape();
+                return;
+            }
 
             // Detect length-two escape codes that begin with number sign (#)
-            if (e.size()==2 && e.get(0)=='#')
+            if (e.size()==2 && e.get(0)=='#') {
+                // ESC # 8   -   DEC Screen Alignment Test (DECALN)
+                // If the last character is 8, fill the entire screen with the capital letter "E",
+                // then move the cursor to the top-left corner.
+                if (e.get(1) == '8') {
+                    // Fill screen with "E"
+                    curX = 0;
+                    curY = 0;
+                    for (int i = 0; i < rows; i++) {
+                        for (int j = 0; j < maxCols; j++)
+                            basicRender('E');
+                        curX = 0;
+                        curY++;
+                    }
+
+                    // Go back to top-left corner
+                    curX = 0;
+                    curY = 0;
+                }
+
                 logEscape();
+                return;
+            }
 
             // Detect length-two escape codes that begin with percent (%)
             if (e.size()==2 && e.get(0)=='%') {
                 isEscaping = false;
                 Log.d("ViewRoot_ESCAPECODE", String.valueOf(charLToA(e)));
                 switch (e.get(1)) {
+                    // ESC % @
                     // If the last character is @, set encoding type to default
                     case '@':
                         if (decSpecGraph) {
@@ -298,6 +362,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                         }
                         break;
 
+                    // ESC % G
                     // If the last character is G, set encoding type to UTF-8
                     case 'G':
                         if (decSpecGraph) {
@@ -307,34 +372,52 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                         break;
                 }
                 e.clear();
+                return;
             }
 
-            // The following length-two escape codes are all interpreted identically
-            // (they all mean set encoding type):
-            // ESC ( C
-            // ESC ) C
+            // ESC ( C   -   Set G0 character set to C
+            // ESC ) C   -   Set G1 character set to C
+            // The "C" represents a character combination consisting of exactly
+            // one or two ASCII characters.
+            // xtermView enables the DEC special graphics set if C contains only a "0" (zero),
+            // otherwise it is disabled.
+            // The following escape codes are not supported:
             // ESC * C
             // ESC + C
             // ESC - C
             // ESC . C
             // ESC / C
-            // The "C" represents a character combination consisting of exactly
-            // one or two ASCII characters.
-            // xtermView enables the DEC special graphics set if C contains only a "0" (zero),
-            // otherwise it is disabled.
             if (e.size()>1 &&
                     (e.get(0)=='(' || e.get(0)==')' || e.get(0)=='*' || e.get(0)=='+' ||
                             e.get(0)=='-' || e.get(0)=='.' || e.get(0)=='/')) {
-                isEscaping = false;
-                Log.d("ViewRoot_ESCAPECODE", String.valueOf(charLToA(e)));
-                if (decSpecGraph != (e.get(1)==48)) {
-                    decSpecGraph = e.get(1) == 48;
-                    onDecSpecGraph.run();
+                switch (e.get(0)) {
+                    // G0
+                    case '(':
+                        if (!g1_charset) {
+                            if (decSpecGraph != (e.get(1) == 48)) {
+                                decSpecGraph = e.get(1) == 48;
+                                onDecSpecGraph.run();
+                            }
+                        } else
+                            decSpecGraph_alt = e.get(1) == 48;
+                        break;
+
+                    // G1
+                    case ')':
+                        if (g1_charset) {
+                            if (decSpecGraph != (e.get(1) == 48)) {
+                                decSpecGraph = e.get(1) == 48;
+                                onDecSpecGraph.run();
+                            }
+                        } else
+                            decSpecGraph_alt = e.get(1) == 48;
+                        break;
                 }
-                e.clear();
+                logEscape();
+                return;
             }
 
-            // --------------------------------------------------------------------------------------
+            // -------------------------------------------------------------------------------------
 
             // Check for CSI and OSC codes only if escape code buffer length is at least 2
             else if (e.size()>1) {
@@ -343,6 +426,8 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                 if (e.get(0) == '[' && (byte)e.get(e.size() - 1).charValue() > 63) {
                     isEscaping = false;
                     Log.d("ViewRoot_ESCAPECODE", String.valueOf(charLToA(e)));
+
+                    Paint background = reverseVideo ? fpaint : dpaint;
 
                     // Determine the type of CSI code by looking at the last character
                     switch (e.get(e.size() - 1)) {
@@ -373,6 +458,8 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             bClear(curY, curX, offset_AT);
 
                             redrawRow(curY); // Redraw the row we just modified
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -387,10 +474,12 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             if (LA > 0)
                                 // Move cursor upwards the number of times specified by the
                                 // parameter
-                                curY = Math.max(0, curY-LA);
+                                curY = Math.max(scrollStart, curY-LA);
 
-                                // If no parameters were detected, move cursor upwards once
-                            else if (curY > 0) curY--;
+                            // If no parameters were detected, move cursor upwards once
+                            else if (curY > scrollStart) curY--;
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -405,10 +494,12 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             if (LB > 0)
                                 // Move cursor downwards the number of times specified by the
                                 // parameter
-                                curY = Math.min(rows-1, curY+LB);
+                                curY = Math.min(scrollEnd, curY+LB);
 
-                                // If no parameters were detected, move cursor downwards once
-                            else if (curY < rows) curY++;
+                            // If no parameters were detected, move cursor downwards once
+                            else if (curY < scrollEnd) curY++;
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -422,11 +513,13 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             if (LC > 0) {
                                 // Move cursor to the right the number of times specified by the
                                 // parameter
-                                curX = Math.min(cols-1, curX+LC);
+                                curX = Math.min(Math.min(cols-1, maxCols-1), curX+LC);
                             }
 
                             // If no parameters were detected, move cursor to the right once
-                            else if (curX < cols) curX++;
+                            else if (curX < cols && curX < maxCols) curX++;
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -445,6 +538,8 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
 
                             // If no parameters were detected, move cursor to the left once
                             else if (curX > 0) curX--;
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -459,10 +554,12 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             if (LE > 0)
                                 // Move cursor downwards the number of times specified by the
                                 // parameter
-                                curY = Math.min(rows-1, curY+LE);
+                                curY = Math.min(scrollEnd, curY+LE);
 
-                                // If no parameters were detected, move cursor downwards once
-                            else if (curY < rows) curY++;
+                            // If no parameters were detected, move cursor downwards once
+                            else if (curY < scrollEnd) curY++;
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -476,10 +573,12 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             // If a parameter was detected (any number of NUMBERS before the "A")
                             if (LF > 0)
                                 // Move cursor upwards the number of times specified by the parameter
-                                curY = Math.max(0, curY-LF);
+                                curY = Math.max(scrollStart, curY-LF);
 
-                                // If no parameters were detected, move cursor upwards once
-                            else if (curY > 0) curY--;
+                            // If no parameters were detected, move cursor upwards once
+                            else if (curY > scrollStart) curY--;
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -497,13 +596,14 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             // If at least one numeric parameter is given, set column depending on
                             // parameter
                             if (Pm_G.length > 0) {
-                                if (Pm_G[0] <= cols) curX = Pm_G[0] - 1;
+                                if (Pm_G[0] <= cols && Pm_G[0] <= maxCols) curX = Pm_G[0] - 1;
                                 else curX = cols - 1;
                             }
 
                             // If no parameters are given, move cursor to first column
                             else curX = 0;
 
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -523,10 +623,15 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             // If exactly two numeric parameters are given, set cursor position
                             // depending on parameters
                             if (Pm_H.length == 2) {
-                                if (Pm_H[0] <= rows && Pm_H[0] > 0) curY = Pm_H[0] - 1;
-                                else if (Pm_H[0] < 1) curY = 0;
-                                else curY = rows - 1;
-                                if (Pm_H[1] <= cols && Pm_H[1] > 0) curX = Pm_H[1] - 1;
+                                // Adjust row number for DECOM
+                                Pm_H[0] += originMode ? scrollStart : 0;
+
+                                if (Pm_H[0] <= scrollEnd+1 && Pm_H[0] > scrollStart)
+                                    curY = Pm_H[0] - 1;
+                                else if (Pm_H[0] <= scrollStart) curY = 0;
+                                else curY = scrollEnd;
+                                if (Pm_H[1] <= cols && Pm_H[1] <= maxCols && Pm_H[1] > 0)
+                                    curX = Pm_H[1] - 1;
                                 else if (Pm_H[1] < 1) curX = 0;
                                 else curX = cols - 1;
                             }
@@ -534,9 +639,11 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             // If no parameters are given, set cursor position to
                             // leftmost column of top row
                             if (Pm_H.length == 0) {
-                                curY = 0;
+                                curY = scrollStart;
                                 curX = 0;
                             }
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -547,9 +654,11 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                         // Ps can only be equal to 0, 1, 2 or 3.
                         // If Ps is equal to 0, all characters in rows below the
                         // cursor's row are erased.
+                        // In this case, characters in the cursor's row on and to the right of
+                        // the cursor will also be erased.
                         // If Ps is equal to 1, all characters in rows above the
                         // cursor's row are erased.
-                        // In this case, characters in the cursor's row to the left of
+                        // In this case, characters in the cursor's row on and to the left of
                         // the cursor will also be erased.
                         // If Ps is equal to 2, if we are using Normal Screen Buffer, the contents
                         // of the screen are moved to the scrollback, then the screen is cleared.
@@ -576,49 +685,55 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             }
 
                             switch (mode_J) {
-                                // If the mode is 0, erase characters below the cursor
+                                // If the mode is 0, erase rows below the cursor and characters
+                                // in the cursor's row on and to the right of the cursor
                                 case 0:
                                     if (curY < rows-1) {
-                                        bClear(curY+1, 0, cols*(rows-curY-1));
+                                        bClear(curY, curX, cols*(rows-curY) + curX);
                                         canvas.drawRect(0, paddingY+(curY+1)*charHeight,
-                                                getWidth(), getHeight(), dpaint);
+                                                getWidth(), getHeight(), background);
                                     }
+                                    else
+                                        bClear(rows-1, curX, cols-curX);
+
+                                    if (curX < cols-1)
+                                        cBlockPaint(curX, curY, cols-1, curY, background);
                                     break;
 
-                                // If the mode is 1, erase characters above and to the
-                                // left of cursor
+                                // If the mode is 1, erase rows above the cursor and characters
+                                // in the cursor's row on and to the left of the cursor
                                 case 1:
                                     if (curY < 1)
                                         bClear(0, 0, curX);
                                     else {
-                                        bClear(0, 0, cols*curY + curX);
+                                        bClear(0, 0, cols*curY + curX + 1);
                                         canvas.drawRect(0, 0, getWidth(),
-                                                paddingY+(curY)*charHeight, dpaint);
+                                                paddingY+(curY)*charHeight, background);
                                     }
 
                                     if (curX > 0)
-                                        cBlockPaint(0, curY, curX-1, curY, dpaint);
+                                        cBlockPaint(0, curY, curX, curY, background);
                                     break;
 
                                 // If the mode is 2, clear screen
                                 case 2:
                                     // If we're using Normal Screen Buffer, first push to scrollback
-                                    if (!isAlt) {
-                                        for (int i = 0; i < rows; i++)
-                                            scrollback.add(0, bitCrop(i, i));
-                                        if (scrollback.size() > Global.getInstance().maxScrollback)
-                                            scrollback.remove(scrollback.size()-1);
-                                    }
+                                    if (!isAlt)
+                                        addToScrollback(0, rows-1);
                                     // Clear screen
                                     bClear(0, 0, rows*cols);
-                                    canvas.drawColor(colors[1]);
+                                    cBlockPaint(0, 0, cols-1, rows-1,
+                                            background);
                                     break;
 
                                 // If the mode is 3, clear scrollback
                                 case 3:
                                     scrollback.clear();
+                                    rscrollback.clear();
                                     break;
                             }
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -628,7 +743,8 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                         // Ps can only be equal to 0, 1 or 2.
                         // If Ps is equal to 0, the character the cursor is on is erased as well as
                         // characters to the right of the cursor.
-                        // If Ps is equal to 1, characters to the left of the cursor are erased.
+                        // If Ps is equal to 1, the character the cursor is on is erased as well as
+                        // characters to the left of the cursor.
                         // If Ps is equal to 2, all characters in the line are erased.
                         // If Ps is not specified, it is treated as if it was equal to 0.
                         // Please note that this code does not shift in characters like
@@ -657,22 +773,25 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                 // the right of the cursor
                                 case 0:
                                     bClearE(curY, curX, cols - curX);
-                                    cBlockPaint(curX, curY, cols-1, curY, bpaint);
+                                    cBlockPaint(curX, curY, cols-1, curY, background);
                                     break;
 
-                                // If the mode is 1, erase all characters to the left of the cursor
+                                // If the mode is 1, erase current character and all characters to
+                                // the left of the cursor
                                 case 1:
-                                    bClearE(curY, 0, curX);
-                                    cBlockPaint(0, curY, curX-1, curY, bpaint);
+                                    bClearE(curY, 0, curX+1);
+                                    cBlockPaint(0, curY, curX, curY, background);
                                     break;
 
                                 // If the mode is 2, erase all characters in the same row as
                                 // the cursor
                                 case 2:
                                     bClearE(curY, 0, cols);
-                                    cBlockPaint(0, curY, cols-1, curY, bpaint);
+                                    cBlockPaint(0, curY, cols-1, curY, background);
                                     break;
                             }
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -700,7 +819,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                 // just clear cursor row and rows below cursor in scrolling region
                                 if (offset_L > scrollEnd - curY) {
                                     bClear(curY, 0, cols*(scrollEnd-curY+1));
-                                    cBlockPaint(0, curY, cols-1, scrollEnd, dpaint);
+                                    cBlockPaint(0, curY, cols-1, scrollEnd, background);
                                 }
 
                                 // If not, actually perform the shifting operation
@@ -714,9 +833,11 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                     // Clear the duplicate rows which are supposed to be blank
                                     bClear(curY, 0, cols*offset_L);
                                     cBlockPaint(0, curY, cols-1, curY+offset_L-1,
-                                            dpaint);
+                                            background);
                                 }
                             }
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -745,7 +866,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                 // just clear cursor row and rows below cursor in scrolling region
                                 if (offset_M > scrollEnd - curY) {
                                     bClear(curY, 0, cols*(scrollEnd-curY+1));
-                                    cBlockPaint(0, curY, cols-1, scrollEnd, dpaint);
+                                    cBlockPaint(0, curY, cols-1, scrollEnd, background);
                                 }
 
                                 // If not, actually perform the shifting operation
@@ -766,9 +887,11 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                     bClear(scrollEnd-offset_M+1, 0,
                                             cols*offset_M);
                                     cBlockPaint(0, scrollEnd-offset_M+1,
-                                            cols-1, scrollEnd, dpaint);
+                                            cols-1, scrollEnd, background);
                                 }
                             }
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -794,7 +917,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
 
                             // Move the characters to the right of the cursor inwards to
                             // fill the gap
-                            if (curX + offset_P < rows)
+                            if (curX + offset_P < cols)
                                 bShift(curY, curX + offset_P, cols-curX-offset_P,
                                         -offset_P);
 
@@ -802,6 +925,8 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             bClear(curY, cols - offset_P, offset_P);
 
                             redrawRow(curY); // Redraw the row we just modified
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -818,6 +943,8 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
 
                             // Scroll up by the specified number of lines
                             scrollUp(offset_S);
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -836,6 +963,8 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
 
                                 // Scroll down by the specified number of lines
                                 scrollDown(offset_T);
+
+                                toWrap = false;
                             }
 
 
@@ -872,7 +1001,9 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
 
                             // Erase characters
                             bClearE(curY, curX, Ps_X);
-                            cBlockPaint(curX, curY, curX+Ps_X-1, curY, bpaint);
+                            cBlockPaint(curX, curY, curX+Ps_X-1, curY, background);
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -890,6 +1021,8 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
 
                             // Scroll down by the specified number of lines
                             scrollDown(offset_caret);
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -908,13 +1041,15 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             // If at least one numeric parameter is given, set column depending on
                             // parameter
                             if (Pm_grave.length > 0) {
-                                if (Pm_grave[0] <= cols) curX = Pm_grave[0] - 1;
+                                if (Pm_grave[0] <= cols && Pm_grave[0] <= maxCols)
+                                    curX = Pm_grave[0] - 1;
                                 else curX = cols - 1;
                             }
 
                             // If no parameters are given, move cursor to first column
                             else curX = 0;
 
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -934,7 +1069,9 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                 curX = Math.min(cols-1, curX+Pm_a[0]);
 
                                 // If no parameters were detected, move cursor to the right once
-                            else if (curX < cols) curX++;
+                            else if (curX < cols && curX < maxCols) curX++;
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -972,13 +1109,18 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             // If at least one numeric parameter is given, set row depending on
                             // parameter
                             if (Pm_d.length > 0) {
-                                if (Pm_d[0] <= rows) curY = Pm_d[0] - 1;
-                                else curY = rows - 1;
+                                // Adjust row number for DECOM
+                                Pm_d[0] += originMode ? scrollStart : 0;
+
+                                if (Pm_d[0] <= scrollEnd+1) curY = Pm_d[0] - 1;
+                                else if (Pm_d[0] <= scrollStart) curY = scrollStart;
+                                else curY = scrollEnd;
                             }
 
                             // If no parameters are given, move cursor to first row
-                            else curY = 0;
+                            else curY = scrollStart;
 
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -995,10 +1137,12 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             if (Pm_e.length > 0 && Pm_e[0] > 0)
                                 // Move cursor downwards the number of times specified by the
                                 // first parameter
-                                curY = Math.min(rows - 1, curY + Pm_e[0]);
+                                curY = Math.min(scrollEnd, curY + Pm_e[0]);
 
-                                // If no parameters were detected, move cursor downwards once
-                            else if (curY < rows) curY++;
+                            // If no parameters were detected, move cursor downwards once
+                            else if (curY < scrollEnd) curY++;
+
+                            toWrap = false;
                             break;
 
                         // -------------------------------------------------------------------------
@@ -1019,10 +1163,14 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             // If exactly two numeric parameters are given,
                             // set cursor position depending on parameters
                             if (Pm_f.length == 2) {
-                                if (Pm_f[0] <= rows && Pm_f[0] > 0) curY = Pm_f[0] - 1;
-                                else if (Pm_f[0] < 1) curY = 0;
-                                else curY = rows - 1;
-                                if (Pm_f[1] <= cols && Pm_f[1] > 0) curX = Pm_f[1] - 1;
+                                // Adjust row number for DECOM
+                                Pm_f[0] += originMode ? scrollStart : 0;
+
+                                if (Pm_f[0] <= scrollEnd+1 && Pm_f[0] > 0) curY = Pm_f[0] - 1;
+                                else if (Pm_f[0] <= scrollStart) curY = 0;
+                                else curY = scrollEnd;
+                                if (Pm_f[1] <= cols && Pm_f[1] <= maxCols && Pm_f[1] > 0)
+                                    curX = Pm_f[1] - 1;
                                 else if (Pm_f[1] < 1) curX = 0;
                                 else curX = cols - 1;
                             }
@@ -1030,10 +1178,30 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             // If no parameters are given, set cursor position to leftmost column of
                             // top row
                             if (Pm_f.length == 0) {
-                                curY = 0;
+                                curY = scrollStart;
                                 curX = 0;
                             }
+
+                            toWrap = false;
                             break;
+
+                        // -------------------------------------------------------------------------
+
+                        // ESC [ Ps g   -   Tab Clear (TBC)
+                        // If the code ends in "g", it means remove tab stops.
+                        // If the parameter is 0, remove the tab stop at the current cursor column.
+                        // If the parameter is 3, remove all tab stops and disable auto-placing
+                        // of new tab stops when the screen is resized.
+                        // If no parameter is specified, it defaults to 0.
+                        case 'g':
+                            int Ps_g = parsePs(charLToA(e));
+
+                            if (Ps_g < 1)
+                                tabStops.set(curX, false);
+                            else if (Ps_g == 3) {
+                                Collections.fill(tabStops, Boolean.FALSE);
+                                tabsCleared = true;
+                            }
 
                         // -------------------------------------------------------------------------
 
@@ -1069,6 +1237,44 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                                 appCursorKeys = true;
                                                 onCursorKeysChange.run();
                                             }
+                                            break;
+
+                                        // If the parameter is 3,
+                                        // switch to 132-column mode (DECCOLM).
+                                        // If c132 is disabled this escape code is ignored.
+                                        case 3:
+                                            if (res_c132) setMaxCols(132);
+                                            break;
+
+                                        // If the parameter is 5,
+                                        // enable reverse video (DECSCNM)
+                                        // (swap foreground and background colours
+                                        // for the ENTIRE SCREEN).
+                                        case 5:
+                                            if (!reverseVideo) {
+                                                reverseVideo = true;
+                                                // Redraw screen
+                                                for (int i = 0; i < rows; i++)
+                                                    redrawRow(i);
+
+                                                onReverseVideoChange.run();
+                                            }
+                                            break;
+
+                                        // If the parameter is 6,
+                                        // enable DEC origin mode (DECOM).
+                                        case 6:
+                                            originMode = true;
+                                            onOriginModeChange.run();
+                                            break;
+
+                                        // If the parameter is 7,
+                                        // enable autowrap (DECAWM).
+                                        // This causes characters entered while at the end of a row
+                                        // to appear in the next row.
+                                        case 7:
+                                            autowrap = true;
+                                            onAutowrapChange.run();
                                             break;
 
                                         // If the parameter is 9,
@@ -1150,6 +1356,15 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                             if (!res_titeInhibit) {
                                                 acurX = curX; // Save cursor X
                                                 acurY = curY; // Save cursor Y
+                                                atypeface = typeface;
+                                                ainverse = inverse;
+                                                afpaint = fpaint;
+                                                afpaintbold = fpaintbold;
+                                                abpaint = bpaint;
+                                                abpaintbold = bpaintbold;
+                                                ag1_charset = g1_charset;
+                                                adecSpecGraph = decSpecGraph;
+                                                adecSpecGraph_alt = decSpecGraph_alt;
                                             }
                                             break;
 
@@ -1162,6 +1377,15 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                             if (!res_titeInhibit) {
                                                 acurX = curX; // Save cursor X
                                                 acurY = curY; // Save cursor Y
+                                                atypeface = typeface;
+                                                ainverse = inverse;
+                                                afpaint = fpaint;
+                                                afpaintbold = fpaintbold;
+                                                abpaint = bpaint;
+                                                abpaintbold = bpaintbold;
+                                                ag1_charset = g1_charset;
+                                                adecSpecGraph = decSpecGraph;
+                                                adecSpecGraph_alt = decSpecGraph_alt;
                                                 if (!isAlt) {
                                                     // Clear Alternate Screen Buffer
                                                     bClear(0, 0, rows*cols);
@@ -1214,6 +1438,44 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                                 appCursorKeys = false;
                                                 onCursorKeysChange.run();
                                             }
+                                            break;
+
+                                        // If the parameter is 3,
+                                        // switch to 80-column mode (DECCOLM).
+                                        // If c132 is disabled this escape code is ignored.
+                                        case 3:
+                                            if (res_c132) setMaxCols(80);
+                                            break;
+
+                                        // If the parameter is 5,
+                                        // disable reverse video
+                                        // (when enabled, swaps foreground and background colours
+                                        // for the ENTIRE SCREEN).
+                                        case 5:
+                                            if (reverseVideo) {
+                                                reverseVideo = false;
+                                                // Redraw screen
+                                                for (int i = 0; i < rows; i++)
+                                                    redrawRow(i);
+
+                                                onReverseVideoChange.run();
+                                            }
+                                            break;
+
+                                        // If the parameter is 6,
+                                        // disable DEC origin mode (DECOM).
+                                        case 6:
+                                            originMode = false;
+                                            onOriginModeChange.run();
+                                            break;
+
+                                        // If the parameter is 7,
+                                        // disable autowrap (DECAWM).
+                                        // This causes characters entered while at the end of a row
+                                        // to replace the character currently at the end of the row.
+                                        case 7:
+                                            autowrap = false;
+                                            onAutowrapChange.run();
                                             break;
 
                                         // If the parameter is 9,
@@ -1302,8 +1564,26 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                         case 1048:
                                             // Restore cursor X
                                             curX = acurX<cols&&!res_titeInhibit ? acurX : cols-1;
+                                            if (curX >= maxCols) curX = maxCols-1;
                                             // Restore cursor Y
                                             curY = acurY<rows&&!res_titeInhibit ? acurY : rows-1;
+
+                                            if (!res_titeInhibit) {
+                                                typeface = atypeface;
+                                                inverse = ainverse;
+                                                fpaint = afpaint;
+                                                fpaintbold = afpaintbold;
+                                                bpaint = abpaint;
+                                                bpaintbold = abpaintbold;
+                                                g1_charset = ag1_charset;
+                                                boolean _decSpecGraph = decSpecGraph;
+                                                decSpecGraph = adecSpecGraph;
+                                                decSpecGraph_alt = adecSpecGraph_alt;
+                                                if (decSpecGraph != _decSpecGraph)
+                                                    onDecSpecGraph.run();
+                                            }
+
+                                            toWrap = false;
                                             break;
 
                                         // If the parameter is 1049,
@@ -1315,8 +1595,24 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                         case 1049:
                                             // Restore cursor X
                                             curX = acurX<cols&&!res_titeInhibit ? acurX : cols-1;
+                                            if (curX >= maxCols) curX = maxCols-1;
                                             // Restore cursor Y
                                             curY = acurY<rows&&!res_titeInhibit ? acurY : rows-1;
+
+                                            if (!res_titeInhibit) {
+                                                typeface = atypeface;
+                                                inverse = ainverse;
+                                                fpaint = afpaint;
+                                                fpaintbold = afpaintbold;
+                                                bpaint = abpaint;
+                                                bpaintbold = abpaintbold;
+                                                g1_charset = ag1_charset;
+                                                boolean _decSpecGraph = decSpecGraph;
+                                                decSpecGraph = adecSpecGraph;
+                                                decSpecGraph_alt = adecSpecGraph_alt;
+                                                if (decSpecGraph != _decSpecGraph)
+                                                    onDecSpecGraph.run();
+                                            }
 
                                             if (isAlt && !res_titeInhibit) {
                                                 // Clear Alternate Screen Buffer
@@ -1328,6 +1624,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                                 isAlt = false; // Use Normal Screen Buffer
                                                 onScreenBufferChange.run();
                                                 restoreBuffer(); // Redraw screen
+                                                toWrap = false;
                                             }
                                             break;
                                     }
@@ -1361,11 +1658,13 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                     // If the parameter is 0,
                                     // clear all text formatting and colouring
                                     if (p == 0) {
-                                        if (isReversed) {
+                                        if (inverse) {
                                             int _fpaint = fpaint.getColor();
                                             fpaint.setColor(bpaint.getColor());
+                                            fpaintbold.setColor(bpaintbold.getColor());
                                             bpaint.setColor(_fpaint);
-                                            isReversed = false;
+                                            bpaintbold.setColor(_fpaint);
+                                            inverse = false;
                                         }
                                         typeface = 0;
                                         setF(-3);
@@ -1375,26 +1674,30 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                     // If the parameter is 1 or 5, make the text bold
                                     if (p == 1 || p == 5) typeface = 1;
 
-                                    // If the parameter is 7, enable reverse video
+                                    // If the parameter is 7, enable inverse mode
                                     // (swap foreground and background colours)
-                                    if (p == 7 && !isReversed) {
+                                    if (p == 7 && !inverse) {
                                         int _fpaint = fpaint.getColor();
                                         fpaint.setColor(bpaint.getColor());
+                                        fpaintbold.setColor(bpaintbold.getColor());
                                         bpaint.setColor(_fpaint);
-                                        isReversed = true;
+                                        bpaintbold.setColor(_fpaint);
+                                        inverse = true;
                                     }
 
                                     // If the parameter is 22, disable bold text
                                     // (bold is enabled by parameters 1 and 5)
                                     if (p == 22) typeface = 0;
 
-                                    // If the parameter is 27, disable reverse video
-                                    // (reverse video is enabled by parameter 7)
-                                    if (p == 27 && isReversed) {
+                                    // If the parameter is 27, disable inverse mode
+                                    // (inverse mode is enabled by parameter 7)
+                                    if (p == 27 && inverse) {
                                         int _fpaint = fpaint.getColor();
                                         fpaint.setColor(bpaint.getColor());
+                                        fpaintbold.setColor(bpaintbold.getColor());
                                         bpaint.setColor(_fpaint);
-                                        isReversed = false;
+                                        bpaintbold.setColor(_fpaint);
+                                        inverse = false;
                                     }
 
                                     // If the parameter is between 30 and 37,
@@ -1429,11 +1732,13 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                 // If no parameters were given,
                                 // clear all text formatting and colouring
                                 if (e.size() < 3) {
-                                    if (isReversed) {
+                                    if (inverse) {
                                         int _fpaint = fpaint.getColor();
                                         fpaint.setColor(bpaint.getColor());
+                                        fpaintbold.setColor(bpaintbold.getColor());
                                         bpaint.setColor(_fpaint);
-                                        isReversed = false;
+                                        bpaintbold.setColor(_fpaint);
+                                        inverse = false;
                                     }
                                     typeface = 0;
                                     setF(-3);
@@ -1459,7 +1764,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                         if (res_directColor)
                                             setF(Pm_m[3], Pm_m[4], Pm_m[5]);
 
-                                        // If not, set foreground colour to closest match in palette
+                                            // If not, set foreground colour to closest match in palette
                                         else
                                             setF(matchColor(Pm_m[3], Pm_m[4], Pm_m[5]));
                                     }
@@ -1491,7 +1796,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                         if (res_directColor)
                                             setB(Pm_m[3], Pm_m[4], Pm_m[5]);
 
-                                        // If not, set background colour to closest match in palette
+                                            // If not, set background colour to closest match in palette
                                         else
                                             setB(matchColor(Pm_m[3], Pm_m[4], Pm_m[5]));
                                     }
@@ -1522,7 +1827,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                         if (res_directColor)
                                             setF(Pm_m[2], Pm_m[3], Pm_m[4]);
 
-                                        // If not, set foreground colour to closest match in palette
+                                            // If not, set foreground colour to closest match in palette
                                         else
                                             setF(matchColor(Pm_m[2], Pm_m[3], Pm_m[4]));
                                     }
@@ -1546,7 +1851,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                         if (res_directColor)
                                             setB(Pm_m[2], Pm_m[3], Pm_m[4]);
 
-                                        // If not, set background colour to closest match in palette
+                                            // If not, set background colour to closest match in palette
                                         else
                                             setB(matchColor(Pm_m[2], Pm_m[3], Pm_m[4]));
                                     }
@@ -1577,10 +1882,13 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                     // If parameter is 6, send "ESC [ r ; c R"
                                     // where r is cursor row and c is cursor column
                                     case 6:
+                                        // Adjust row number for DECOM
+                                        int Ps_n6 = originMode ? curY-scrollStart : curY;
+
                                         List<Character> L = new ArrayList<>();
                                         L.add((char)27);                                      // ESC
                                         L.add('[');                                           // [
-                                        L.addAll(Arrays.asList(intToChars(curY+1)));          // r
+                                        L.addAll(Arrays.asList(intToChars(Ps_n6+1)));         // r
                                         L.add(';');                                           // ;
                                         L.addAll(Arrays.asList(intToChars(curX+1)));          // c
                                         L.add('R');                                           // R
@@ -1644,6 +1952,15 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             if (e.size() == 2) {
                                 ncurX = curX; // Save cursor X
                                 ncurY = curY; // Save cursor Y
+                                ntypeface = typeface;
+                                ninverse = inverse;
+                                nfpaint = fpaint;
+                                nfpaintbold = fpaintbold;
+                                nbpaint = bpaint;
+                                nbpaintbold = bpaintbold;
+                                ng1_charset = g1_charset;
+                                ndecSpecGraph = decSpecGraph;
+                                ndecSpecGraph_alt = ndecSpecGraph_alt;
                             }
                             break;
 
@@ -1657,12 +1974,27 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                             if (e.size() == 2) {
                                 curX = ncurX<cols ? ncurX : cols-1; // Restore cursor X
                                 curY = ncurY<rows ? ncurY : rows-1; // Restore cursor Y
+                                if (curX >= maxCols) curX = maxCols-1;
+                                typeface = ntypeface;
+                                inverse = ninverse;
+                                fpaint = nfpaint;
+                                fpaintbold = nfpaintbold;
+                                bpaint = nbpaint;
+                                bpaintbold = nbpaintbold;
+                                g1_charset = ng1_charset;
+                                boolean _decSpecGraph = decSpecGraph;
+                                decSpecGraph = ndecSpecGraph;
+                                decSpecGraph_alt = ndecSpecGraph_alt;
+                                if (decSpecGraph != _decSpecGraph)
+                                    onDecSpecGraph.run();
+                                toWrap = false;
                             }
                             break;
 
                         // -------------------------------------------------------------------------
                     }
                     e.clear();
+                    return;
                 }
 
                 // If the code begins with "]" and ends with BEL or ST,
@@ -1711,79 +2043,118 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                     }
 
                     e.clear();
+                    return;
                 }
             }
         }
 
-        else { // If we are not looking for an escape code
-            // If the character is a special non-readable character
-            if ((int)c < 32 || (int)c == 127) switch ((byte) c) {
-                // If we receive an escape character
-                case 27:
-                    isEscaping = true; // Start looking for escape codes
-                    break;
+        // Handle control characters
+        if ((int)c < 32 || (int)c == 127) switch ((byte) c) {
+            // If we receive an enquiry character, send back the answerbackString resource
+            case 5:
+                shell.output(res_answerbackString.toCharArray());
+                break;
 
-                // If we receive a carriage return character
-                case 13:
-                    curX = 0; // Move cursor back to beginning of line
-                    break;
-
-                // If we receive a line feed, form feed or vertical tab character
-                // (xterm treats VT and FF as LF)
-                case 10:  // LF (line feed)
-                case 11:  // VT (vertical tab)
-                case 12:  // FF (form feed)
-                    // Insert implicit carriage return if automatic newline mode is enabled
-                    if (autoNewline) curY = 0;
-                    // Move cursor to next line (without changing cursor column)
-                    curY++;
-                    shouldScroll = true;
-                    break;
-
-                // If we receive a backspace character
-                // (backspace means move cursor back one space without deleting)
-                case 8:
-                    if (curX == 0) { // If we're at beginning of a line
-                        // Move cursor to last column of previous row
-                        curX = cols - 1;
-                        curY--;
-                        shouldScroll = true;
-
-                    } else { // If we're not at the beginning of a line
-                        curX--; // Move cursor back one space
+            // If we receive a bell character, run the onBell runnable
+            case 7:
+                post(new Runnable() {
+                    public void run() {
+                        onBell.run();
                     }
-                    break;
+                });
+                break;
 
-                // If we receive a bell character, run the onBell runnable
-                case 7:
-                    post(new Runnable() {
-                        @Override
-                        public void run() {
-                            onBell.run();
-                        }
-                    });
-                    break;
+            // If we receive a backspace character
+            // (backspace means move cursor back one space without deleting)
+            case 8:
+                if (curX == 0) { // If we're at beginning of a line
+                    // Move cursor to last column of previous row
+                    curX = cols - 1;
+                    curY--;
+                    shouldScroll = true;
+                }
+                else // If we're not at the beginning of a line
+                    curX--; // Move cursor back one space
+                toWrap = false;
+                break;
 
-                // If we receive an enquiry character, send back the answerbackString resource
-                case 5:
-                    shell.output(res_answerbackString.toCharArray());
-            }
+            // If we receive a horizontal tab character,
+            // move the cursor horizontally to the next column that has a tab stop,
+            // or to the end of the row, whichever comes first
+            case 9:
+                if (curX < cols-1 && curX < maxCols-1)
+                    do curX++; while (curX < cols-1 && curX < maxCols-1 && !tabStops.get(curX));
+                break;
 
+            // If we receive a line feed, form feed or vertical tab character
+            // (xterm treats VT and FF as LF)
+            case 10:  // LF (line feed)
+            case 11:  // VT (vertical tab)
+            case 12:  // FF (form feed)
+                // Insert implicit carriage return if automatic newline mode is enabled
+                if (autoNewline) curY = 0;
+                // Move cursor to next line (without changing cursor column)
+                curY++;
+                shouldScroll = true;
+                break;
+
+            // If we receive a carriage return character
+            case 13:
+                curX = 0; // Move cursor back to beginning of line
+                break;
+
+            // If we receive a shift out character, switch to alternate character set (G1)
+            case 14:
+                if (!g1_charset) {
+                    boolean _decSpecGraph = decSpecGraph;
+                    decSpecGraph = decSpecGraph_alt;
+                    decSpecGraph_alt = _decSpecGraph;
+                    g1_charset = true;
+                    if (decSpecGraph != _decSpecGraph)
+                        onDecSpecGraph.run();
+                }
+                break;
+
+            // If we receive a shift in character, switch to standard character set (G0)
+            case 15:
+                if (g1_charset) {
+                    boolean _decSpecGraph = decSpecGraph;
+                    decSpecGraph = decSpecGraph_alt;
+                    decSpecGraph_alt = _decSpecGraph;
+                    g1_charset = false;
+                    if (decSpecGraph != _decSpecGraph)
+                        onDecSpecGraph.run();
+                }
+                break;
+
+            // If we receive an escape character
+            case 27:
+                isEscaping = true; // Start looking for escape codes
+                break;
+        }
+
+        if (!isEscaping) { // If we are not looking for an escape code
             // Render non-special characters normally
-            else {
+            if ((int)c >= 32 && (int)c != 127) {
 
                 // Decode character from DEC special graphics set if necessary
                 char z = decSpecGraph ? decodeDecSpecGraph(c) : c;
 
+                // Go to the next line if there is no room for more characters on the current line
+                if (!(curX == cols-1 || curX == maxCols-1)) toWrap = false;
+                if (toWrap && autowrap) {
+                    // Put cursor at beginning of next line
+                    curX = 0;
+                    curY++;
+
+                    toWrap = false;
+                }
+
                 // If the cursor is beyond the scrolling region:
                 if (curY == scrollEnd + 1 && shouldScroll) {
                     // Add the first row to the scrollback
-                    if (!isAlt) {
-                        Bitmap bitBuffer = bitCrop(scrollStart, scrollStart);
-                        scrollback.add(0, bitBuffer);
-                        if (scrollback.size() > Global.getInstance().maxScrollback)
-                            scrollback.remove(scrollback.size()-1);
-                    }
+                    if (!isAlt)
+                        addToScrollback(scrollStart, scrollStart);
 
                     // Scroll up by one line
                     curY--;
@@ -1802,9 +2173,15 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                 screenBufferT[pos(curY, curX)] = typeface;
 
                 // Draw character to temporary text bitmap
-                tcanvas.drawColor(screenBufferB[pos(curY,curX)]); // Draw text background
-                tcanvas.drawText(new char[]{z}, 0, 1,
-                        x(0)-paddingX, y(0)-paddingY, typeface>0 ? fpaintbold:fpaint);
+                if (!reverseVideo) {
+                    tcanvas.drawColor(screenBufferB[pos(curY, curX)]); // Draw text background
+                    tcanvas.drawText(new char[]{z}, 0, 1,
+                        x(0) - paddingX, y(0) - paddingY, typeface > 0 ? fpaintbold : fpaint);
+                } else {
+                    tcanvas.drawColor(screenBufferF[pos(curY, curX)]); // Draw text background
+                    tcanvas.drawText(new char[]{z}, 0, 1,
+                        x(0) - paddingX, y(0) - paddingY, typeface > 0 ? bpaintbold : bpaint);
+                }
 
                 // Draw text bitmap to screen
                 canvas.drawBitmap(tbitmap, paddingX+(charWidth*curX),
@@ -1816,12 +2193,8 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
             // If the cursor is beyond the scrolling region:
             if (curY == scrollEnd + 1 && shouldScroll) {
                 // Add the first row to the scrollback
-                if (!isAlt) {
-                    Bitmap bitBuffer = bitCrop(scrollStart, scrollStart);
-                    scrollback.add(0, bitBuffer);
-                    if (scrollback.size() > Global.getInstance().maxScrollback)
-                        scrollback.remove(scrollback.size()-1);
-                }
+                if (!isAlt)
+                    addToScrollback(scrollStart, scrollStart);
 
                 // Scroll up by one line
                 curY--;
@@ -1833,10 +2206,11 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
         }
 
 
-        if (curX == cols) { // If the terminal row is full:
-            // Put cursor at beginning of next line
-            curX = 0;
-            curY++;
+        // If the terminal row is full, go to the next line when the next printable
+        // character is entered
+        if (curX == cols || curX == maxCols) {
+            curX--; // Move cursor back to the end of the current line
+            toWrap = true;
         }
     }
 
@@ -1849,9 +2223,15 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
         screenBufferT[pos(curY, curX)] = typeface;
 
         // Draw character to temporary text bitmap
-        tcanvas.drawColor(screenBufferB[pos(curY,curX)]); // Draw text background
-        tcanvas.drawText(new char[]{c}, 0, 1,
-                x(0)-paddingX, y(0)-paddingY, typeface>0 ? fpaintbold:fpaint);
+        if (!reverseVideo) {
+            tcanvas.drawColor(screenBufferB[pos(curY, curX)]); // Draw text background
+            tcanvas.drawText(new char[]{c}, 0, 1,
+                x(0) - paddingX, y(0) - paddingY, typeface > 0 ? fpaintbold : fpaint);
+        } else {
+            tcanvas.drawColor(screenBufferF[pos(curY, curX)]); // Draw text background
+            tcanvas.drawText(new char[]{c}, 0, 1,
+                x(0) - paddingX, y(0) - paddingY, typeface > 0 ? bpaintbold : bpaint);
+        }
 
         // Draw text bitmap to screen
         canvas.drawBitmap(tbitmap, paddingX+(charWidth*curX),
@@ -2104,6 +2484,31 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
     public synchronized void setOnTitleChangeListener(Runnable R) { onTitleChange = R; }
 
     /**
+     * Set the action to run when maximum terminal columns changes, either because xtermView
+     * received the DECCOLM code or because it was changed using setMaxCols().
+     * @param R Runnable to run when maximum terminal columns changes.
+     */
+    public synchronized void setOnMaxColsChangeListener(Runnable R) { onMaxColsChange = R; }
+
+    /**
+     * Set the runnable to run when DEC autowrap mode (DECAWM) changes.
+     * @param R Runnable to run when DEC autowrap mode changes.
+     * @param R Runnable to run when autowrap mode changes.
+     */
+    public synchronized void setOnAutowrapChangeListener(Runnable R) { onAutowrapChange = R; }
+
+    /**
+     * Set the runnable to run when DEC reverse video (DECSCNM) is enabled or disabled.
+     * If reverse video is enabled, the foreground and background colours of the entire screen
+     * are swapped.
+     *
+     * By default, xtermView uses a fast form of reverse video that does not update the scrollback.
+     * To enable full reverse video at the cost of speed at the cost of speed, use the method setFastReverseVideo(false).
+     * @param R Runnable to run when reverse video is enabled or disabled.
+     */
+    public synchronized void setOnReverseVideoChangeListener(Runnable R) {onReverseVideoChange = R;}
+
+    /**
      * Set whether or not the control key is currently being held down.
      * This is required for correct performance of Mouse Tracking.
      * @param k State of control key.
@@ -2241,6 +2646,108 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
     public synchronized String getTitle() { return title; }
 
     /**
+     * Set the maximum terminal columns that can be used.
+     * Setting this to 0 (default) will allow unlimited columns.
+     * Using this method will also clear the screen (sending to scrollback unless using the
+     * Alternate Screen Buffer) and move the cursor to the top-left.
+     * @param max_cols Maximum terminal columns that can be used.
+     */
+    public synchronized void setMaxCols(int max_cols) {
+        maxCols = max_cols < 1 ? Integer.MAX_VALUE : max_cols;
+
+        // If we're using Normal Screen Buffer, first push to scrollback
+        if (!isAlt)
+            addToScrollback(0, rows-1);
+        // Clear screen
+        bClear(0, 0, rows*cols);
+        canvas.drawColor(colors[1]);
+        // Move to top-left
+        curX = 0;
+        curY = 0;
+
+        onMaxColsChange.run();
+    }
+
+    /**
+     * Get the maximum terminal columns that can be used.
+     * A value of 0 (default) means unlimited columns.
+     * @return Maximum terminal columns that can be used.
+     */
+    public synchronized int getMaxCols() {
+        return maxCols < Integer.MAX_VALUE ? maxCols : 0;
+    }
+
+    /**
+     * Turn DEC autowrap (DECAWM) on or off. It is enabled by default.
+     * If enabled, entering a character when the cursor is at the end of a row causes the cursor
+     * to go to the beginning of the next row.
+     * If disabled, entering a character when the cursor is at the end of a row causes it to replace
+     * the character already at the end of the row.
+     * @param k Autowrap.
+     */
+    public synchronized void setAutowrap(boolean k) {
+        autowrap = k;
+        onAutowrapChange.run();
+    }
+
+    /**
+     * Get the state of DEC autowrap (DECAWM). It is enabled by default.
+     * If enabled, entering a character when the cursor is at the end of a row causes the cursor
+     * to go to the beginning of the next row.
+     * If disabled, entering a character when the cursor is at the end of a row causes it to replace
+     * the character already at the end of the row.
+     * @return true if autowrap is enabled, otherwise false.
+     */
+    public synchronized boolean getAutowrap() { return autowrap; }
+
+    /**
+     * Turn DEC reverse video (DECSCNM) on or off. It is disabled by default.
+     * If reverse video is enabled, the foreground and background colours of the entire screen
+     * are swapped.
+     *
+     * By default, xtermView uses a fast form of reverse video that does not update the scrollback.
+     * To enable full reverse video at the cost of speed, use the method setFastReverseVideo(false).
+     * @param k Reverse video.
+     */
+    public synchronized void setReverseVideo(boolean k) { reverseVideo = k; }
+
+    /**
+     * Get the state of DEC reverse video (DECSCNM). It is disabled by default.
+     * If reverse video is enabled, the foreground and background colours of the entire screen
+     * are swapped.
+     *
+     * By default, xtermView uses a fast form of reverse video that does not update the scrollback.
+     * To enable full reverse video at the cost of speed, use the method setFastReverseVideo(false).
+     * @return true if reverse video is enabled, otherwise false.
+     */
+    public synchronized boolean getReverseVideo() { return reverseVideo; }
+
+    /**
+     * Turn DEC origin mode (DECOM) on or off. It is disabled by default.
+     * If enabled, the "top row" for absolute cursor position control sequences is the top
+     * row of the scrolling region instead of the top row of the entire terminal screen.
+     * Recommended to leave disabled.
+     * @param k Origin mode.
+     */
+    public synchronized void setOriginMode(boolean k) { originMode = k; }
+
+    /**
+     * Get the state of DEC origin mode (DECOM). It is disabled by default.
+     * If enabled, the "top row" for absolute cursor position control sequences is the top
+     * row of the scrolling region instead of the top row of the entire terminal screen.
+     * Recommended to leave disabled.
+     * @return
+     */
+    public synchronized boolean getOriginMode() { return originMode; }
+
+    /**
+     * By default, xtermView uses a fast form of reverse video that does not update the scrollback.
+     * To enable full reverse video at the cost of speed, use the method setFastReverseVideo(false).
+     * @param k true to enable fast reverse video, false to disable fast reverse video.
+     */
+    public synchronized void setFastReverseVideo(boolean k) { fastReverseVideo = k; }
+
+    /**
      * Gets the transcript, which is a List of Characters containing all characters ever printed
      * by the terminal.
      * @param escape Whether or not to include characters that were part of escape codes.
@@ -2324,6 +2831,20 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
      * @return State of titeInhibit.
      */
     public synchronized boolean getRes_titeInhibit() { return res_titeInhibit; }
+
+    /**
+     * Sets the state of xterm's c132 resource.
+     * If this is enabled, shells can make xtermView change maximum width using the DECCOLM code.
+     * @param b Enable or disable c132.
+     */
+    public synchronized void setRes_c132(boolean b) { res_c132 = b; }
+
+    /**
+     * Gets the state of xterm's c132 resource.
+     * If this is enabled, shells can make xtermView change maximum width using the DECCOLM code.
+     * @return State of c132.
+     */
+    public synchronized boolean getRes_c132() { return res_c132; }
 
 
 
@@ -2514,6 +3035,43 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
     }
 
     /**
+     * Add a given inclusive range of rows in the current screen buffer to the scrollback.
+     * NOTE: Be sure to delete these rows from the current screen buffer yourself.
+     * @param top First row to add to scrollback.
+     * @param bottom Last row to add to scrollback.
+     */
+    private synchronized void addToScrollback(int top, int bottom) {
+        // Add rows to scrollback
+        for (int i = top; i <= bottom; i++) {
+            if (fastReverseVideo) {
+                scrollback.add(0, bitCrop(i, i));
+                rscrollback.add(0, bitCrop(i, i));
+            } else {
+                if (!reverseVideo) {
+                    scrollback.add(0, bitCrop(i, i));
+                    reverseVideo = true;
+                    redrawRow(i);
+                    rscrollback.add(0, bitCrop(i, i));
+                    reverseVideo = false;
+                } else {
+                    rscrollback.add(0, bitCrop(i, i));
+                    reverseVideo = false;
+                    redrawRow(i);
+                    scrollback.add(0, bitCrop(i, i));
+                    reverseVideo = true;
+                }
+            }
+        }
+
+        // If the number of rows in scrollback exceeds the limit,
+        // remove some of the earliest rows inserted into scrollback
+        if (scrollback.size() > Global.getInstance().maxScrollback) {
+            scrollback.remove(scrollback.size() - 1);
+            rscrollback.remove(rscrollback.size() - 1);
+        }
+    }
+
+    /**
      * Used by render() to scroll the scrolling region up when necessary.
      * @param L Number of lines to scroll by. Must be more than zero.
      */
@@ -2540,8 +3098,8 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
             canvas.drawBitmap(bitBuffer, 0, paddingY + charHeight * scrollStart,
                     null);
             // Clear last L rows
-            canvas.drawRect(0, paddingY+charHeight*(scrollEnd-L+1), getWidth(),
-                    paddingY+charHeight*(scrollEnd+1), dpaint);
+            cBlockPaint(0, scrollEnd-L+1, cols-1, scrollEnd,
+                    reverseVideo ? fpaint : dpaint);
         }
 
         // Afterwards redraw the view
@@ -2574,8 +3132,8 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
             canvas.drawBitmap(bitBuffer, 0, paddingY + charHeight * (scrollStart+L),
                     null);
             // Clear first L rows
-            canvas.drawRect(0, paddingY+charHeight*(scrollStart), getWidth(),
-                    paddingY+charHeight*(scrollStart+L), dpaint);
+            cBlockPaint(0, scrollStart, cols-1, scrollStart+L-1,
+                    reverseVideo ? fpaint : dpaint);
         }
 
         // Afterwards redraw the view
@@ -2590,8 +3148,12 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
         Bitmap bitBuffer = bitCrop(L, rows-1); // Crop the area between Lth row and last row
         canvas.drawBitmap(bitBuffer, 0, paddingY, null); // Shift area upwards by L rows
         // Clear last L rows
-        canvas.drawRect(0, paddingY+charHeight*(rows-L), getWidth(),
-                paddingY+charHeight*rows, dpaint);
+        if (!reverseVideo)
+            canvas.drawRect(0, paddingY+charHeight*(rows-L), getWidth(),
+                    paddingY+charHeight*rows, dpaint);
+        else
+            canvas.drawRect(0, paddingY+charHeight*(rows-L), getWidth(),
+                    paddingY+charHeight*rows, fpaint);
 
         // Add rows to the bottom of the screen from scrollback or screen buffer
         for (int i = 0; i < L; i++)
@@ -2602,9 +3164,14 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                         null);
                 // If the row to add to the bottom of screen is not part of screen buffer
                 // (i.e. part of scrollback)
-            } else
-                canvas.drawBitmap(scrollback.get(scrollLines-L-rows+i), 0,
-                        paddingY+charHeight*(rows-i-1), null);
+            } else {
+                if (!reverseVideo)
+                    canvas.drawBitmap(scrollback.get(scrollLines - L - rows + i), 0,
+                            paddingY + charHeight * (rows - i - 1), null);
+                else
+                    canvas.drawBitmap(rscrollback.get(scrollLines - L - rows + i), 0,
+                            paddingY + charHeight * (rows - i - 1), null);
+            }
 
         // Afterwards redraw the view
         postInvalidate();
@@ -2620,12 +3187,21 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
         // Shift area down by L rows
         canvas.drawBitmap(bitBuffer, 0, paddingY + charHeight * L, null);
         // Clear first L rows
-        canvas.drawRect(0, paddingY, getWidth(),
-                paddingY+charHeight*L, dpaint);
+        if (!reverseVideo)
+            canvas.drawRect(0, paddingY, getWidth(),
+                    paddingY+charHeight*L, dpaint);
+        else
+            canvas.drawRect(0, paddingY, getWidth(),
+                    paddingY+charHeight*L, fpaint);
 
-        for (int i = 0; i < L; i++) // Add rows to the top of the screen from the scrollback
-            canvas.drawBitmap(scrollback.get(scrollLines+L-i-1), 0,
-                    paddingY+charHeight*i, null);
+        for (int i = 0; i < L; i++) { // Add rows to the top of the screen from the scrollback
+            if (!reverseVideo)
+                canvas.drawBitmap(scrollback.get(scrollLines + L - i - 1), 0,
+                        paddingY + charHeight * i, null);
+            else
+                canvas.drawBitmap(rscrollback.get(scrollLines + L - i - 1), 0,
+                        paddingY + charHeight * i, null);
+        }
 
         // Afterwards redraw the view
         postInvalidate();
@@ -2648,14 +3224,14 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
         byte _typeface = typeface;
 
         // Save text formatting
-        boolean _isReversed = isReversed;
+        boolean _inverse = inverse;
 
         // Move cursor to start of specified row
         curX = 0;
         curY = row;
 
         // Render characters in the specified row
-        isReversed = false;
+        inverse = false;
         for (char c : getBufferRow(row)) {
             // Restore the foreground colour for the character
             fpaint.setColor(screenBufferF[pos(curY, curX)]);
@@ -2663,6 +3239,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
 
             // Restore the background colour for the character
             bpaint.setColor(screenBufferB[pos(curY, curX)]);
+            bpaintbold.setColor(screenBufferB[pos(curY, curX)]);
 
             // Restore the typeface for the character
             typeface = screenBufferT[pos(curY, curX)];
@@ -2678,12 +3255,13 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
         fpaint.setColor(_fcolor);
         fpaintbold.setColor(_fcolor);
         bpaint.setColor(_bcolor);
+        bpaintbold.setColor(_bcolor);
 
         // Reset typeface
         typeface = _typeface;
 
         // Reset text formatting
-        isReversed = _isReversed;
+        inverse = _inverse;
 
         postInvalidate(); // Triggers a re-drawing of the View
     }
@@ -2703,11 +3281,13 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
      * @param id Colour ID, set to -3 to use default colour
      */
     private synchronized void setF(int id) {
-        if (!isReversed) {
+        if (!inverse) {
             fpaint.setColor(colors[id + 3]);
             fpaintbold.setColor(colors[id + 3]);
-        } else
+        } else {
             bpaint.setColor(colors[id + 3]);
+            bpaintbold.setColor(colors[id + 3]);
+        }
     }
 
     /**
@@ -2718,11 +3298,13 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
      */
     private synchronized void setF(int r, int g, int b) {
         if (r>=0 && r<256 && g>=0 && g<256 && b>=0 && b<256) {
-            if (!isReversed) {
+            if (!inverse) {
                 fpaint.setColor(Color.argb(255, r, g, b));
                 fpaintbold.setColor(Color.argb(255, r, g, b));
-            } else
+            } else {
                 bpaint.setColor(Color.argb(255, r, g, b));
+                bpaintbold.setColor(Color.argb(255, r, g, b));
+            }
         }
     }
 
@@ -2732,8 +3314,10 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
      * @param i Colour ID, set to -2 to use default colour
      */
     private synchronized void setB(int i) {
-        if (!isReversed)
+        if (!inverse) {
             bpaint.setColor(colors[i + 3]);
+            bpaintbold.setColor(colors[i + 3]);
+        }
         else {
             fpaint.setColor(colors[i + 3]);
             fpaintbold.setColor(colors[i + 3]);
@@ -2748,8 +3332,10 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
      */
     private synchronized void setB(int r, int g, int b) {
         if (r>=0 && r<256 && g>=0 && g<256 && b>=0 && b<256) {
-            if (!isReversed)
+            if (!inverse) {
                 bpaint.setColor(Color.argb(255, r, g, b));
+                bpaintbold.setColor(Color.argb(255, r, g, b));
+            }
             else {
                 fpaint.setColor(Color.argb(255, r, g, b));
                 fpaintbold.setColor(Color.argb(255, r, g, b));
@@ -2953,7 +3539,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
      */
     private synchronized Bitmap bitCrop(int top, int bottom) {
         return Bitmap.createBitmap(bitmap, 0, paddingY+charHeight*(top), getWidth(),
-                charHeight*(bottom-top+1)+1);
+                charHeight*(bottom-top+1));
     }
 
     /**
@@ -2966,9 +3552,9 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
      */
     private synchronized Bitmap bitCropS(int row) {
         if (isAlt) return Bitmap.createBitmap(abitmap, 0,
-                paddingY+charHeight*(row), getWidth(), charHeight+1);
+                paddingY+charHeight*(row), getWidth(), charHeight);
         else return Bitmap.createBitmap(sbitmap, 0,
-                paddingY+charHeight*(row), getWidth(), charHeight+1);
+                paddingY+charHeight*(row), getWidth(), charHeight);
     }
 
     /**
@@ -3170,14 +3756,9 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
      */
     private synchronized int toNum(char c[]) {
         if (c.length == 0) return -1;
-        int i = (int)Math.pow(10, (c.length-1));
-        int r = 0;
-        for (char x : c) {
+        for (char x : c)
             if (!isNum(x)) return -1;
-            r += toNum(x)*i;
-            i /= 10;
-        }
-        return r;
+        return Integer.parseInt(new String(c));
     }
 
     /**
@@ -3373,6 +3954,9 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
         fpaint.setStyle(Paint.Style.FILL);
         fpaint.setTextSize(spToPx(Global.getInstance().fontSize));
         fpaint.setTypeface(font);
+        sfpaint = fpaint;
+        afpaint = fpaint;
+        nfpaint = fpaint;
 
         // Initialize the Paint object for drawing bold text
         fpaintbold = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -3381,11 +3965,31 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
         fpaintbold.setTextSize(spToPx(Global.getInstance().fontSize));
         fpaintbold.setTypeface(fontBold);
         fpaintbold.setFakeBoldText(true);
+        sfpaintbold = fpaintbold;
+        afpaintbold = fpaintbold;
+        nfpaintbold = fpaintbold;
+
 
         // Initialize the Paint object for drawing the text background
         bpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         bpaint.setColor(bcolor);
         bpaint.setStyle(Paint.Style.FILL);
+        bpaint.setTextSize(spToPx(Global.getInstance().fontSize));
+        bpaint.setTypeface(font);
+        sbpaint = bpaint;
+        abpaint = bpaint;
+        nbpaint = bpaint;
+
+        // Initialize the Paint object for drawing bold text in reverse video mode
+        bpaintbold = new Paint(Paint.ANTI_ALIAS_FLAG);
+        bpaintbold.setColor(bcolor);
+        bpaintbold.setStyle(Paint.Style.FILL);
+        bpaintbold.setTextSize(spToPx(Global.getInstance().fontSize));
+        bpaintbold.setTypeface(fontBold);
+        bpaintbold.setFakeBoldText(true);
+        sbpaintbold = bpaintbold;
+        abpaintbold = bpaintbold;
+        nbpaintbold = bpaintbold;
 
         // Initialize the Paint object for drawing the cursor
         cpaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -3498,8 +4102,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                 int L = rows<curY ? curY-rows+1 : 0;
                 if (L>0) { // This runs if the cursor is below the screen after resizing
                     // Add top L lines to scrollback
-                    for (int i = 0; i < L; i++)
-                        scrollback.add(0, bitCrop(i, i));
+                    addToScrollback(0, L-1);
                     // Scroll window up L lines
                     scrollScreenUp(L);
                     // Shift all but the first L rows upwards by one row
@@ -3571,6 +4174,11 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                 screenBufferT = bT;
             }
         }
+
+        // If the terminal has more columns than before, we need to resize the tab stop list
+        // By default there is a tab stop at every column whose ZERO-BASED number is divisible by 8
+        for (int i = _cols; i < cols; i++)
+            tabStops.add(i%8 == 0 && !tabsCleared);
     }
 
     /**
@@ -3991,6 +4599,11 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
     private Paint bpaint;
 
     /**
+     * This defines colours and styles for the text background when the text is bold.
+     */
+    private Paint bpaintbold;
+
+    /**
      * This defines colours and styles for the cursor.
      */
     private Paint cpaint;
@@ -4070,6 +4683,11 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
      * Maximum number of columns that can fit on the screen.
      */
     private int cols;
+
+    /**
+     * Maximum number of columns permitted to be used.
+     */
+    private int maxCols = Integer.MAX_VALUE;
 
     /**
      * First row in the screen buffer that is part of the scrolling region.
@@ -4193,10 +4811,23 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
     private List<Character> e = new ArrayList<>();
 
     /**
-     * Whether or not reverse video is enabled.
-     * If reverse video is enabled, the foreground and background colours are swapped.
+     * Whether or not inverse mode is enabled.
+     * If inverse mode is enabled, the foreground and background colours of any new characters
+     * entered will be swapped.
+     * This is distinct from DEC reverse video, where the colours are swapped for the entire screen.
      */
-    private boolean isReversed = false;
+    private boolean inverse = false;
+
+    /**
+     * Whether or not DEC reverse video (DECSCNM) is enabled.
+     * If reverse video is enabled, the foreground and background colours of the entire screen
+     * are swapped.
+     * This is distinct from inverse mode, where the colours are only swapped for new characters.
+     *
+     * By default, xtermView uses a fast form of reverse video that does not update the scrollback.
+     * To enable full reverse video at the cost of speed, use the method setFastReverseVideo(false).
+     */
+    private boolean reverseVideo = false;
 
     /**
      * Runnable to run when bell character is received.
@@ -4274,6 +4905,26 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
     private Runnable onTitleChange = new Runnable() { public void run() { } };
 
     /**
+     * Runnable to run when maximum terminal columns changes.
+     */
+    private Runnable onMaxColsChange = new Runnable() { public void run() { } };
+
+    /**
+     * Runnable to run when DEC autowrap mode (DECAWM) changes.
+     */
+    private Runnable onAutowrapChange = new Runnable() { public void run() { } };
+
+    /**
+     * Runnable to run when DEC origin mode (DECOM) changes.
+     */
+    private Runnable onOriginModeChange = new Runnable() { public void run() { } };
+
+    /**
+     * Runnable to run when DEC reverse video (DECSCNM) changes.
+     */
+    private Runnable onReverseVideoChange = new Runnable() { public void run() { } };
+
+    /**
      * Contains only the on-screen characters and the Alternate Screen Buffer.
      */
     private char screenBuffer[];
@@ -4301,6 +4952,12 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
     private List<Bitmap> scrollback = new ArrayList<>();
 
     /**
+     * This List contains each line in the scrollback in reverse video mode as a bitmap.
+     * The newest lines added to scrollback are at the start, the oldest lines are at the end.
+     */
+    private List<Bitmap> rscrollback = new ArrayList<>();
+
+    /**
      * Current typeface.
      * 0 is regular, 1 is bold.
      */
@@ -4322,6 +4979,51 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
     private int scurY = 0;
 
     /**
+     * Saved "typeface" (from DECSC).
+     */
+    private byte stypeface;
+
+    /**
+     * Saved "inverse" (from DECSC).
+     */
+    private boolean sinverse = false;
+
+    /**
+     * Saved "fpaint" (from DECSC).
+     */
+    private Paint sfpaint;
+
+    /**
+     * Saved "fpaintbold" (from DECSC).
+     */
+    private Paint sfpaintbold;
+
+    /**
+     * Saved "bpaint" (from DECSC).
+     */
+    private Paint sbpaint;
+
+    /**
+     * Saved "bpaintbold" (from DECSC).
+     */
+    private Paint sbpaintbold;
+
+    /**
+     * Saved "g1_charset" (from DECSC).
+     */
+    private boolean sg1_charset = false;
+
+    /**
+     * Saved "decSpecGraph" (from DECSC).
+     */
+    private boolean sdecSpecGraph = false;
+
+    /**
+     * Saved "decSpecGraph_alt" (from DECSC).
+     */
+    private boolean sdecSpecGraph_alt = false;
+
+    /**
      * Saved curX position (from DECSET).
      */
     private int acurX = 0;
@@ -4332,6 +5034,51 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
     private int acurY = 0;
 
     /**
+     * Saved "typeface" (from DECSET).
+     */
+    private byte atypeface;
+
+    /**
+     * Saved "inverse" (from DECSET).
+     */
+    private boolean ainverse = false;
+
+    /**
+     * Saved "fpaint" (from DECSET).
+     */
+    private Paint afpaint;
+
+    /**
+     * Saved "fpaintbold" (from DECSET).
+     */
+    private Paint afpaintbold;
+
+    /**
+     * Saved "bpaint" (from DECSET).
+     */
+    private Paint abpaint;
+
+    /**
+     * Saved "bpaintbold" (from DECSET).
+     */
+    private Paint abpaintbold;
+
+    /**
+     * Saved "g1_charset" (from DECSET).
+     */
+    private boolean ag1_charset = false;
+
+    /**
+     * Saved "decSpecGraph" (from DECSET).
+     */
+    private boolean adecSpecGraph = false;
+
+    /**
+     * Saved "decSpecGraph_alt" (from DECSET).
+     */
+    private boolean adecSpecGraph_alt = false;
+
+    /**
      * Saved curX position (from ANSI.SYS).
      */
     private int ncurX = 0;
@@ -4340,6 +5087,51 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
      * Saved curY position (from ANSI.SYS).
      */
     private int ncurY = 0;
+
+    /**
+     * Saved "typeface" (from ANSI.SYS).
+     */
+    private byte ntypeface;
+
+    /**
+     * Saved "inverse" (from ANSI.SYS).
+     */
+    private boolean ninverse = false;
+
+    /**
+     * Saved "fpaint" (from ANSI.SYS).
+     */
+    private Paint nfpaint;
+
+    /**
+     * Saved "fpaintbold" (from ANSI.SYS).
+     */
+    private Paint nfpaintbold;
+
+    /**
+     * Saved "bpaint" (from ANSI.SYS).
+     */
+    private Paint nbpaint;
+
+    /**
+     * Saved "bpaintbold" (from ANSI.SYS).
+     */
+    private Paint nbpaintbold;
+
+    /**
+     * Saved "g1_charset" (from ANSI.SYS).
+     */
+    private boolean ng1_charset = false;
+
+    /**
+     * Saved "decSpecGraph" (from ANSI.SYS).
+     */
+    private boolean ndecSpecGraph = false;
+
+    /**
+     * Saved "decSpecGraph_alt" (from ANSI.SYS).
+     */
+    private boolean ndecSpecGraph_alt = false;
 
     /**
      * Object used for gathering data about scrolling.
@@ -4415,6 +5207,36 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
      * <pre>https://vt100.net/docs/vt100-ug/table3-9.html</pre>
      */
     private boolean decSpecGraph = false;
+
+    /**
+     * Whether or not the currently unused character set is DEC special graphics
+     * (for example if we're using G0, then is G1 using DEC special graphics, and vice versa).
+     */
+    private boolean decSpecGraph_alt = false;
+
+    /**
+     * Whether or not we are using the alternate character set (G1).
+     * The VT100 supports two character sets: the standard character set (G0) and the
+     * alternate character set (G1). What exactly G0 and G1 are can be configured.
+     */
+    private boolean g1_charset = false;
+
+    /**
+     * Whether or not DEC autowrap mode (DECAWM) is enabled.
+     * If enabled, entering a character when the cursor is at the end of a row causes the cursor
+     * to go to the beginning of the next row.
+     * If disabled, entering a character when the cursor is at the end of a row causes it to replace
+     * the character already at the end of the row.
+     */
+    private boolean autowrap = true;
+
+    /**
+     * Whether or not DEC origin mode (DECOM) is enabled.
+     * If enabled, the "top row" for absolute cursor position control sequences is the top
+     * row of the scrolling region instead of the top row of the entire terminal screen.
+     * Recommended to leave disabled.
+     */
+    private boolean originMode = false;
 
     /**
      * Whether or not X10 Compatibility Mouse Tracking is enabled.
@@ -4531,6 +5353,37 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
      * which are associated with the Alternate Screen Buffer.
      */
     private boolean res_titeInhibit = false;
+
+    /**
+     * xterm's c132 resource.
+     * If this is enabled, shells can make xtermView change maximum width using the DECCOLM code.
+     */
+    private boolean res_c132 = true;
+
+    /**
+     * When the cursor reaches the end of a line, it stays at the end of the line until the
+     * next character is entered, when it then jumps to the _second_ column of the next line.
+     */
+    private boolean toWrap = false;
+
+    /**
+     * List of booleans indicating whether or not each column has a tab stop.
+     * By default there is a tab stop at every column whose ZERO-BASED number is divisible by 8.
+     */
+    private List<Boolean> tabStops = new ArrayList<>();
+
+    /**
+     * Whether or not tab stops have been cleared.
+     */
+    private boolean tabsCleared = false;
+
+    /**
+     * Whether or not fast reverse video is enabled.
+     *
+     * By default, xtermView uses a fast form of reverse video that does not update the scrollback.
+     * To enable full reverse video at the cost of speed, use the method setFastReverseVideo(false).
+     */
+    private boolean fastReverseVideo = true;
 
     /**
      * Buffer where characters are stored if characters are sent to the terminal
