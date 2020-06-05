@@ -1202,6 +1202,7 @@ public final class xtermView extends View implements GestureDetector.OnGestureLi
                                 Collections.fill(tabStops, Boolean.FALSE);
                                 tabsCleared = true;
                             }
+                            break;
 
                         // -------------------------------------------------------------------------
 
